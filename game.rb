@@ -1,22 +1,26 @@
-require "msgpack"
+require "yaml"
+require "byebug"
 
 class Game
   ALPHABET = [*("a".."z")]
 
-  def initialize
-    @misses = []
-    @lives = 5
-    possible_words = File.read "5desk.txt"
-    possible_words = possible_words.split("\r\n").select {
+  def initialize(misses = [], lives = 5, word = "", hits = [])
+    @misses = misses
+    @lives = lives
+    @word = word
+    if @word.length == 0
+      possible_words = File.read "5desk.txt"
+      possible_words = possible_words.split("\r\n").select {
       |word| word.length > 4 && word.length < 13
-    }
-    @word = possible_words.sample.downcase.split("")
-    @hits = []
-    @word.length.times { @hits << "_" }
+      }
+      @word = possible_words.sample.downcase.split("")
+    end
+    @hits = hits
+    @word.length.times { @hits << "_" } if @word.length == 0
   end
 
-  def to_msgpack
-    MessagePack.dump ({
+  def to_yaml
+    YAML.dump ({
       :misses => @misses,
       :lives => @lives,
       :word => @word,
@@ -24,12 +28,13 @@ class Game
     })
   end
 
-  def self.from_msgpack(string)
-    data = MessagePack.load string
-    self.new(data["misses"], data["lives"], data["word"], data["hits"])
+  def self.from_yaml(string)
+    data = YAML.load string
+    self.new(data[:misses], data[:lives], data[:word], data[:hits])
   end
 
   def play
+
     while @lives > 0
       puts "So far you have #{@hits}"
       puts "You've already guessed : #{@misses}"
@@ -40,7 +45,12 @@ class Game
         input = gets.chomp.upcase
         break if input == "N"
         if input == "Y"
-
+          Dir.mkdir("saves") unless Dir.exist? "saves"
+          save = to_yaml
+          filename = "saves/#{@hits.join("")}.txt"
+          File.open(filename, "w"){ |somefile| somefile.puts save}
+          return
+        end
       end
 
       guess = ""
