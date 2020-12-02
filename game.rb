@@ -16,7 +16,7 @@ class Game
       @word = possible_words.sample.downcase.split("")
     end
     @hits = hits
-    @word.length.times { @hits << "_" } if @word.length == 0
+    @word.length.times { @hits << "_" } if @hits.length == 0
   end
 
   def to_yaml
